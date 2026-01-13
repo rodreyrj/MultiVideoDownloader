@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO -->
+    <title>Multi Video Downloader - Descarga YouTube e Instagram</title>
+    <meta name="description" content="Descarga videos de YouTube e Instagram Reels de forma gratuita y rápida. MP4 y MP3 de alta calidad.">
+    <meta name="keywords" content="descargar videos, youtube downloader, instagram reels, mp3 converter">
+    <meta name="author" content="rodreyrj">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --accent: #10b981;
+            --accent-glow: rgba(16, 185, 129, 0.4);
+            --bg: #0a0a0a;
+            --card: #161616;
+            --header-bg: rgba(22, 22, 22, 0.9);
+            --input-bg: #1f1f1f;
+            --text: #ffffff;
+            --text-dim: #a1a1aa;
+            --window-border: rgba(255, 255, 255, 0.08);
+            --error: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            width: 100%;
+            background: var(--header-bg);
+            backdrop-filter: blur(15px);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--window-border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .logo i {
+            background: var(--accent);
+            padding: 5px;
+            border-radius: 8px;
+            color: black;
+        }
+
+        .nav-actions button {
+            background: #222;
+            color: var(--text);
+            border: 1px solid var(--window-border);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-actions button:hover {
+            background: #333;
+            border-color: var(--accent);
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        .app-container {
+            background: var(--card);
+            width: 100%;
+            max-width: 480px;
+            padding: 35px;
+            border-radius: 28px;
+            border: 1px solid var(--window-border);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            text-align: center;
+            position: relative;
+        }
+
+        .vpn-warning {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--input-bg);
+            padding: 5px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-radius: 10px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .tab.active {
+            background: var(--accent);
+            color: #000;
+        }
+
+        .input-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; font-size: 11px; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; }
+
+        input, select {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--window-border);
+            padding: 14px;
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .input-error {
+            border-color: var(--error) !important;
+            color: var(--error);
+        }
+
+        .error-msg {
+            color: var(--error);
+            font-size: 11px;
+            margin-top: 5px;
+            display: none;
+            font-weight: 600;
+        }
+
+        .download-btn {
+            width: 100%;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 16px;
+            border-radius: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: 0.2s;
+        }
+
+        .download-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px var(--accent-glow); }
+
+        /* --- VENTANILLA ESTILO ALERTA --- */
+        .info-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            width: 90%;
+            max-width: 360px;
+            background: #202020;
+            border-radius: 20px;
+            border: 1px solid var(--accent);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.9);
+            z-index: 500;
+            padding: 20px;
+            display: none;
+            opacity: 0;
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .info-popup.active {
+            display: block;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .popup-title { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; }
+        
+        .close-circle {
+            width: 22px; height: 22px;
+            background: #333;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .app-description {
+            font-size: 12px;
+            color: #eee;
+            text-align: left;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .ad-disclaimer {
+            background: rgba(255, 189, 46, 0.1);
+            border-left: 3px solid #ffbd2e;
+            padding: 10px;
+            font-size: 11px;
+            color: #ccc;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .contact-box {
+            background: #181818;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: left;
+            margin-bottom: 15px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #ccc;
+            margin-bottom: 10px;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .contact-item:hover { color: var(--text); }
+        .contact-item:last-child { margin-bottom: 0; }
+        .contact-item i { color: var(--accent); }
+
+        .btn-confirm {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .loading-box { display: none; margin-top: 20px; }
+        .progress-track { height: 6px; background: #222; border-radius: 10px; overflow: hidden; margin-top: 8px; }
+        .progress-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.3s ease; }
+
+        footer {
+            padding: 15px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-dim);
+            border-top: 1px solid var(--window-border);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <i data-lucide="zap" size="20"></i>
+        <span>Multi Downloader</span>
+    </div>
+    <div class="nav-actions">
+        <button onclick="toggleAbout(true)">
+            <i data-lucide="info" size="16"></i>
+            Acerca de
+        </button>
+    </div>
+</header>
+
+<main>
+    <div class="app-container" id="main-box">
+        
+        <div class="vpn-warning">
+            <i data-lucide="shield-off" size="14"></i>
+            <span>IMPORTANTE: No deves usar VPN</span>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" id="tab-yt" onclick="setMode('yt')">YouTube</div>
+            <div class="tab" id="tab-ig" onclick="setMode('ig')">Instagram</div>
+        </div>
+
+        <div class="input-group">
+            <label id="url-label">Enlace de YouTube</label>
+            <input type="text" id="videoUrl" placeholder="Pegue el enlace aquí..." oninput="clearError()">
+            <div id="error-text" class="error-msg">Este enlace no pertenece a la plataforma seleccionada</div>
+        </div>
+
+        <div class="input-group">
+            <label>Formato</label>
+            <select id="quality">
+                <option value="mp3">Audio MP3 (320kbps)</option>
+                <option value="720">Vídeo MP4 (720p)</option>
+                <option value="360">Vídeo MP4 (360p)</option>
+            </select>
+        </div>
+
+        <button class="download-btn" onclick="process()">
+            <i data-lucide="download"></i>
+            <span>Descargar</span>
+        </button>
+
+        <div class="loading-box" id="loader">
+            <div style="display:flex; justify-content:space-between; font-size:11px;">
+                <span id="status">Procesando...</span>
+                <span id="percent">0%</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="bar"></div></div>
+        </div>
+
+        <!-- VENTANILLA "ACERCA DE" -->
+        <div class="info-popup" id="about-popup">
+            <div class="popup-header">
+                <span class="popup-title">Acerca de la App</span>
+                <div class="close-circle" onclick="toggleAbout(false)">✕</div>
+            </div>
+            
+            <div class="app-description">
+                Esta herramienta gratuita permite la obtención de archivos multimedia de forma directa. Diseñada para velocidad y simplicidad.
+            </div>
+
+            <div class="ad-disclaimer">
+                <b>Nota sobre publicidad:</b> Los anuncios presentes en el enlace final provienen del servidor de procesamiento necesario para el servicio.
+            </div>
+            
+            <div class="contact-box">
+                <a href="https://rodreyrj.vercel.app" target="_blank" class="contact-item">
+                    <i data-lucide="user" size="14"></i>
+                    <span>Desarrollado por: <b style="color: var(--accent);">rodreyrj</b></span>
+                </a>
+                <a href="tel:+5356639178" class="contact-item">
+                    <i data-lucide="phone" size="14"></i>
+                    <span>+53 56639178</span>
+                </a>
+                <a href="https://wa.me/5356639178" target="_blank" class="contact-item">
+                    <i data-lucide="message-circle" size="14"></i>
+                    <span>WhatsApp Directo</span>
+                </a>
+                <a href="mailto:rodreyrj@gmail.com" class="contact-item">
+                    <i data-lucide="mail" size="14"></i>
+                    <span>rodreyrj@gmail.com</span>
+                </a>
+            </div>
+            <button class="btn-confirm" onclick="toggleAbout(false)">Aceptar</button>
+        </div>
+
+        <!-- VENTANILLA DE DESCARGA LISTA -->
+        <div class="info-popup" id="ready-popup">
+            <div class="popup-header">
+                <span class="popup-title">Descarga Lista</span>
+                <div class="close-circle" onclick="closeReady()">✕</div>
+            </div>
+            <i data-lucide="check-circle" size="32" color="#10b981" style="margin: 10px 0;"></i>
+            <p style="font-size: 13px; margin-bottom: 15px;">¡Enlace generado!</p>
+            <a href="#" id="finalBtn" target="_blank" class="download-btn" style="text-decoration:none;" onclick="closeReady()">OBTENER ARCHIVO</a>
+        </div>
+
+    </div>
+</main>
+
+<footer>
+    &copy; 2024 Multi Video Downloader | rodreyrj
+</footer>
+
+<script>
+    lucide.createIcons();
+    let mode = 'yt';
+
+    function setMode(m) {
+        mode = m;
+        // Limpiar input y errores al cambiar de pestaña
+        document.getElementById('videoUrl').value = '';
+        clearError();
+        
+        document.getElementById('tab-yt').className = m === 'yt' ? 'tab active' : 'tab';
+        document.getElementById('tab-ig').className = m === 'ig' ? 'tab active' : 'tab';
+        document.getElementById('url-label').innerText = m === 'yt' ? 'Enlace de YouTube' : 'Enlace de Instagram';
+    }
+
+    function clearError() {
+        document.getElementById('videoUrl').classList.remove('input-error');
+        document.getElementById('error-text').style.display = 'none';
+    }
+
+    function toggleAbout(show) {
+        const popup = document.getElementById('about-popup');
+        popup.style.display = show ? 'block' : 'none';
+        setTimeout(() => popup.classList.toggle('active', show), 10);
+    }
+
+    function closeReady() {
+        const popup = document.getElementById('ready-popup');
+        popup.classList.remove('active');
+        setTimeout(() => popup.style.display = 'none', 300);
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('bar').style.width = '0%';
+    }
+
+    function process() {
+        const urlInput = document.getElementById('videoUrl');
+        const url = urlInput.value.trim();
+        const errorText = document.getElementById('error-text');
+        
+        if(!url) return;
+
+        // Validar plataforma
+        const isYT = url.includes('youtube.com') || url.includes('youtu.be');
+        const isIG = url.includes('instagram.com');
+
+        if((mode === 'yt' && !isYT) || (mode === 'ig' && !isIG)) {
+            urlInput.classList.add('input-error');
+            errorText.style.display = 'block';
+            errorText.innerText = `Este enlace no parece ser de ${mode === 'yt' ? 'YouTube' : 'Instagram'}`;
+            return;
+        }
+
+        const loader = document.getElementById('loader');
+        const bar = document.getElementById('bar');
+        const percent = document.getElementById('percent');
+        loader.style.display = 'block';
+
+        let p = 0;
+        const itv = setInterval(() => {
+            p += 10;
+            bar.style.width = p + '%';
+            percent.innerText = p + '%';
+            if(p >= 100) {
+                clearInterval(itv);
+                const q = document.getElementById('quality').value;
+                const f = q === 'mp3' ? 'mp3' : 'mp4';
+                const quality = q === 'mp3' ? '320' : q;
+                
+                document.getElementById('finalBtn').href = `https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=${f}&q=${quality}`;
+                
+                const popup = document.getElementById('ready-popup');
+                popup.style.display = 'block';
+                setTimeout(() => popup.classList.add('active'), 10);
+            }
+        }, 100);
+    }
+</script>
+
+</body>
+</html>
